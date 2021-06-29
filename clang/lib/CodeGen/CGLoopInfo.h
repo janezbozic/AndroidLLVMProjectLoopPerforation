@@ -64,6 +64,9 @@ struct LoopAttributes {
   /// llvm.unroll.
   unsigned UnrollCount;
 
+  ///llvm.perforate
+  unsigned Perforate;
+
   /// llvm.unroll.
   unsigned UnrollAndJamCount;
 
@@ -263,6 +266,9 @@ public:
 
   /// Set the unroll count for the next loop pushed.
   void setUnrollCount(unsigned C) { StagedAttrs.UnrollCount = C; }
+
+  /// Set perforation factor
+  void setPerforation(unsigned C) { StagedAttrs.Perforate = C; }
 
   /// \brief Set the unroll count for the next loop pushed.
   void setUnrollAndJamCount(unsigned C) { StagedAttrs.UnrollAndJamCount = C; }

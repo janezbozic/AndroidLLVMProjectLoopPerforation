@@ -236,6 +236,9 @@ void initializeLocalizerPass(PassRegistry&);
 void initializeLoopAccessLegacyAnalysisPass(PassRegistry&);
 void initializeLoopDataPrefetchLegacyPassPass(PassRegistry&);
 void initializeLoopDeletionLegacyPassPass(PassRegistry&);
+
+void initializeLoopPerforationLegacyPassPass(PassRegistry&);
+
 void initializeLoopDistributeLegacyPass(PassRegistry&);
 void initializeLoopExtractorLegacyPassPass(PassRegistry &);
 void initializeLoopGuardWideningLegacyPassPass(PassRegistry&);

@@ -3112,6 +3112,7 @@ static bool ParseLoopHintValue(Preprocessor &PP, Token &Tok, Token PragmaName,
 ///    'vectorize_width' '(' loop-hint-value ')'
 ///    'interleave_count' '(' loop-hint-value ')'
 ///    'unroll_count' '(' loop-hint-value ')'
+///    'perforate' '(' loop-hint-value ')'
 ///    'pipeline' '(' disable ')'
 ///    'pipeline_initiation_interval' '(' loop-hint-value ')'
 ///
@@ -3174,6 +3175,7 @@ void PragmaLoopHintHandler::HandlePragma(Preprocessor &PP,
                            .Case("vectorize_width", true)
                            .Case("interleave_count", true)
                            .Case("unroll_count", true)
+                           .Case("perforate", true)
                            .Case("pipeline", true)
                            .Case("pipeline_initiation_interval", true)
                            .Default(false);

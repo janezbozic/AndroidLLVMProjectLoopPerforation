@@ -3286,6 +3286,7 @@ def LoopHint : Attr {
   /// interleave_count: interleaves 'Value' loop iterations.
   /// unroll: fully unroll loop if State == Enable.
   /// unroll_count: unrolls loop 'Value' times.
+  /// perforate: perforates loop with factor n.
   /// unroll_and_jam: attempt to unroll and jam loop if State == Enable.
   /// unroll_and_jam_count: unroll and jams loop 'Value' times.
   /// distribute: attempt to distribute loop if State == Enable.
@@ -3304,11 +3305,11 @@ def LoopHint : Attr {
   /// State of the loop optimization specified by the spelling.
   let Args = [EnumArgument<"Option", "OptionType",
                           ["vectorize", "vectorize_width", "interleave", "interleave_count",
-                           "unroll", "unroll_count", "unroll_and_jam", "unroll_and_jam_count",
+                           "unroll", "unroll_count", "perforate", "unroll_and_jam", "unroll_and_jam_count",
                            "pipeline", "pipeline_initiation_interval", "distribute",
                            "vectorize_predicate"],
                           ["Vectorize", "VectorizeWidth", "Interleave", "InterleaveCount",
-                           "Unroll", "UnrollCount", "UnrollAndJam", "UnrollAndJamCount",
+                           "Unroll", "UnrollCount", "Perforate", "UnrollAndJam", "UnrollAndJamCount",
                            "PipelineDisabled", "PipelineInitiationInterval", "Distribute",
                            "VectorizePredicate"]>,
               EnumArgument<"State", "LoopHintState",
@@ -3325,6 +3326,7 @@ def LoopHint : Attr {
     case InterleaveCount: return "interleave_count";
     case Unroll: return "unroll";
     case UnrollCount: return "unroll_count";
+    case Perforate: return "perforate";
     case UnrollAndJam: return "unroll_and_jam";
     case UnrollAndJamCount: return "unroll_and_jam_count";
     case PipelineDisabled: return "pipeline";

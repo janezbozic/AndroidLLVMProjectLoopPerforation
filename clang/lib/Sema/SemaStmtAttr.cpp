@@ -134,6 +134,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                  .Case("interleave_count", LoopHintAttr::InterleaveCount)
                  .Case("unroll", LoopHintAttr::Unroll)
                  .Case("unroll_count", LoopHintAttr::UnrollCount)
+                 .Case("perforate", LoopHintAttr::Perforate)
                  .Case("pipeline", LoopHintAttr::PipelineDisabled)
                  .Case("pipeline_initiation_interval",
                        LoopHintAttr::PipelineInitiationInterval)
@@ -142,7 +143,8 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
     if (Option == LoopHintAttr::VectorizeWidth ||
         Option == LoopHintAttr::InterleaveCount ||
         Option == LoopHintAttr::UnrollCount ||
-        Option == LoopHintAttr::PipelineInitiationInterval) {
+        Option == LoopHintAttr::PipelineInitiationInterval ||
+        Option == LoopHintAttr::Perforate) {
       assert(ValueExpr && "Attribute must have a valid value expression.");
       if (S.CheckLoopHintExpr(ValueExpr, St->getBeginLoc()))
         return nullptr;
@@ -245,7 +247,7 @@ CheckForIncompatibleAttributes(Sema &S,
     const LoopHintAttr *NumericAttr;
   } HintAttrs[] = {{nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr},
                    {nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr},
-                   {nullptr, nullptr}};
+                   {nullptr, nullptr}, {nullptr, nullptr}};
 
   for (const auto *I : Attrs) {
     const LoopHintAttr *LH = dyn_cast<LoopHintAttr>(I);
@@ -262,7 +264,8 @@ CheckForIncompatibleAttributes(Sema &S,
       UnrollAndJam,
       Distribute,
       Pipeline,
-      VectorizePredicate
+      VectorizePredicate,
+      Perforate
     } Category;
     switch (Option) {
     case LoopHintAttr::Vectorize:
@@ -291,6 +294,9 @@ CheckForIncompatibleAttributes(Sema &S,
       break;
     case LoopHintAttr::VectorizePredicate:
       Category = VectorizePredicate;
+      break;
+    case LoopHintAttr::Perforate:
+      Category = Perforate;
       break;
     };
 

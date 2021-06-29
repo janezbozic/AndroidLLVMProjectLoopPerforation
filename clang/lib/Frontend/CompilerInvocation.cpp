@@ -326,13 +326,13 @@ static void FixupInvocation(CompilerInvocation &Invocation) {
 
 static unsigned getOptimizationLevel(ArgList &Args, InputKind IK,
                                      DiagnosticsEngine &Diags) {
-  unsigned DefaultOpt = llvm::CodeGenOpt::None;
+  unsigned DefaultOpt = llvm::CodeGenOpt::Less;
   if (IK.getLanguage() == Language::OpenCL && !Args.hasArg(OPT_cl_opt_disable))
     DefaultOpt = llvm::CodeGenOpt::Default;
 
   if (Arg *A = Args.getLastArg(options::OPT_O_Group)) {
     if (A->getOption().matches(options::OPT_O0))
-      return llvm::CodeGenOpt::None;
+      return llvm::CodeGenOpt::Less;
 
     if (A->getOption().matches(options::OPT_Ofast))
       return llvm::CodeGenOpt::Aggressive;

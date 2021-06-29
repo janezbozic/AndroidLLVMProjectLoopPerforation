@@ -16,6 +16,7 @@
 
 #include "llvm/Transforms/Utils/SimplifyCFGOptions.h"
 #include <functional>
+#include <llvm/IR/Metadata.h>
 
 namespace llvm {
 
@@ -337,6 +338,11 @@ FunctionPass *createMemCpyOptPass();
 // LoopDeletion - This pass performs DCE of non-infinite loops that it
 // can prove are dead.
 //
+
+Pass *createLoopPerforationLegacyPass();
+
+unsigned GetPerforationMetadata(MDNode *LoopID, StringRef Name);
+
 Pass *createLoopDeletionPass();
 
 //===----------------------------------------------------------------------===//

@@ -447,6 +447,7 @@ void PassManagerBuilder::addFunctionSimplificationPasses(
   }
   MPM.add(createLoopIdiomPass());             // Recognize idioms like memset.
   MPM.add(createIndVarSimplifyPass());        // Canonicalize indvars
+  MPM.add(createLoopPerforationLegacyPass());
   addExtensionsToPM(EP_LateLoopOptimizations, MPM);
   MPM.add(createLoopDeletionPass());          // Delete dead loops
 
