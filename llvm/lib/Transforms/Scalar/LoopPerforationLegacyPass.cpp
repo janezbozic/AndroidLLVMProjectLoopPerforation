@@ -99,7 +99,7 @@ public:
         continue;
 
       //Getting global variable's address for perforation factor
-      GlobalValue *b = L->getHeader()->getModule()->getNamedGlobal("PERF_TOGGLE");
+      GlobalValue *b = L->getHeader()->getModule()->getNamedGlobal("CLANG_PERFORATION_RATE");
 
       LoadInst *loadInst;
       if (b)
