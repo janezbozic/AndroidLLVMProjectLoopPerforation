@@ -339,9 +339,11 @@ FunctionPass *createMemCpyOptPass();
 // can prove are dead.
 //
 
+//Adding declaration for creation method of LoopPerforation pass
 Pass *createLoopPerforationLegacyPass();
 
-unsigned GetPerforationMetadata(MDNode *LoopID, StringRef Name);
+//Adding declaration for retrieving loop's metadata in LoopPerforation pass
+bool GetPerforationMetadata(MDNode *LoopID, StringRef Name);
 
 Pass *createLoopDeletionPass();
 

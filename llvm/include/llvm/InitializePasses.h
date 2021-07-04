@@ -237,6 +237,7 @@ void initializeLoopAccessLegacyAnalysisPass(PassRegistry&);
 void initializeLoopDataPrefetchLegacyPassPass(PassRegistry&);
 void initializeLoopDeletionLegacyPassPass(PassRegistry&);
 
+//Adding method declaration for LoopPerforation initialization
 void initializeLoopPerforationLegacyPassPass(PassRegistry&);
 
 void initializeLoopDistributeLegacyPass(PassRegistry&);

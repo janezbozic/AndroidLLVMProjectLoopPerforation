@@ -186,7 +186,7 @@ namespace {
       (void) llvm::createGVNPass();
       (void) llvm::createNewGVNPass();
       (void) llvm::createMemCpyOptPass();
-
+      //Declaring method for LoopPerforation pass creation
       (void) llvm::createLoopPerforationLegacyPass();
       (void) llvm::createLoopDeletionPass();
       (void) llvm::createPostDomTree();

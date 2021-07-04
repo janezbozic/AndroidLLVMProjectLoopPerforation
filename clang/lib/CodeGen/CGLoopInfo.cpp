@@ -430,10 +430,9 @@ MDNode *LoopInfo::createMetadata(
   SmallVector<Metadata *, 4> Args;
   Args.append(LoopProperties.begin(), LoopProperties.end());
 
-  if (Attrs.Perforate > 0) {
-    Metadata *Vals[] = {MDString::get(Ctx, "llvm.loop.perforate"),
-                        ConstantAsMetadata::get(ConstantInt::get(
-                            llvm::Type::getInt32Ty(Ctx), Attrs.Perforate))};
+  if (Attrs.Perforate) {
+    //Adding loop perforaion enabled to loop metadata
+    Metadata *Vals[] = {MDString::get(Ctx, "llvm.loop.perforate.enable")};
 
     Args.push_back(MDNode::get(Ctx, Vals));
     return createFullUnrollMetadata(Attrs, Args, HasUserTransforms);
@@ -447,7 +446,7 @@ LoopAttributes::LoopAttributes(bool IsParallel)
       UnrollEnable(LoopAttributes::Unspecified),
       UnrollAndJamEnable(LoopAttributes::Unspecified),
       VectorizePredicateEnable(LoopAttributes::Unspecified), VectorizeWidth(0),
-      InterleaveCount(0), UnrollCount(0), Perforate(0), UnrollAndJamCount(0),
+      InterleaveCount(0), UnrollCount(0), Perforate(false), UnrollAndJamCount(0),
       DistributeEnable(LoopAttributes::Unspecified), PipelineDisabled(false),
       PipelineInitiationInterval(0), MustProgress(false) {}
 
@@ -456,7 +455,7 @@ void LoopAttributes::clear() {
   VectorizeWidth = 0;
   InterleaveCount = 0;
   UnrollCount = 0;
-  Perforate = 0;
+  Perforate = false;
   UnrollAndJamCount = 0;
   VectorizeEnable = LoopAttributes::Unspecified;
   UnrollEnable = LoopAttributes::Unspecified;
@@ -482,7 +481,7 @@ LoopInfo::LoopInfo(BasicBlock *Header, const LoopAttributes &Attrs,
 
   if (!Attrs.IsParallel && Attrs.VectorizeWidth == 0 &&
       Attrs.InterleaveCount == 0 && Attrs.UnrollCount == 0 &&
-      Attrs.Perforate == 0 &&
+      Attrs.Perforate == false &&
       Attrs.UnrollAndJamCount == 0 && !Attrs.PipelineDisabled &&
       Attrs.PipelineInitiationInterval == 0 &&
       Attrs.VectorizePredicateEnable == LoopAttributes::Unspecified &&
@@ -648,6 +647,9 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::UnrollAndJam:
         setUnrollAndJamState(LoopAttributes::Disable);
         break;
+      case LoopHintAttr::Perforate:
+        setPerforation(false);
+        break;
       case LoopHintAttr::VectorizePredicate:
         setVectorizePredicateState(LoopAttributes::Disable);
         break;
@@ -658,7 +660,6 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
         setPipelineDisabled(true);
         break;
       case LoopHintAttr::UnrollCount:
-      case LoopHintAttr::Perforate:
       case LoopHintAttr::UnrollAndJamCount:
       case LoopHintAttr::VectorizeWidth:
       case LoopHintAttr::InterleaveCount:
@@ -685,8 +686,10 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::Distribute:
         setDistributeState(true);
         break;
-      case LoopHintAttr::UnrollCount:
       case LoopHintAttr::Perforate:
+        setPerforation(true);
+        break;
+      case LoopHintAttr::UnrollCount:
       case LoopHintAttr::UnrollAndJamCount:
       case LoopHintAttr::VectorizeWidth:
       case LoopHintAttr::InterleaveCount:
@@ -753,15 +756,13 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::UnrollCount:
         setUnrollCount(ValueInt);
         break;
-      case LoopHintAttr::Perforate:
-        setPerforation(ValueInt);
-        break;
       case LoopHintAttr::UnrollAndJamCount:
         setUnrollAndJamCount(ValueInt);
         break;
       case LoopHintAttr::PipelineInitiationInterval:
         setPipelineInitiationInterval(ValueInt);
         break;
+      case LoopHintAttr::Perforate:
       case LoopHintAttr::Unroll:
       case LoopHintAttr::UnrollAndJam:
       case LoopHintAttr::VectorizePredicate:

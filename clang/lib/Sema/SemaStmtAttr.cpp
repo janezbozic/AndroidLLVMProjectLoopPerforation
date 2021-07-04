@@ -134,7 +134,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                  .Case("interleave_count", LoopHintAttr::InterleaveCount)
                  .Case("unroll", LoopHintAttr::Unroll)
                  .Case("unroll_count", LoopHintAttr::UnrollCount)
-                 .Case("perforate", LoopHintAttr::Perforate)
+                 .Case("perforate", LoopHintAttr::Perforate)  //Parsing perforate option
                  .Case("pipeline", LoopHintAttr::PipelineDisabled)
                  .Case("pipeline_initiation_interval",
                        LoopHintAttr::PipelineInitiationInterval)
@@ -143,8 +143,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
     if (Option == LoopHintAttr::VectorizeWidth ||
         Option == LoopHintAttr::InterleaveCount ||
         Option == LoopHintAttr::UnrollCount ||
-        Option == LoopHintAttr::PipelineInitiationInterval ||
-        Option == LoopHintAttr::Perforate) {
+        Option == LoopHintAttr::PipelineInitiationInterval) {
       assert(ValueExpr && "Attribute must have a valid value expression.");
       if (S.CheckLoopHintExpr(ValueExpr, St->getBeginLoc()))
         return nullptr;
@@ -154,7 +153,8 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                Option == LoopHintAttr::VectorizePredicate ||
                Option == LoopHintAttr::Unroll ||
                Option == LoopHintAttr::Distribute ||
-               Option == LoopHintAttr::PipelineDisabled) {
+               Option == LoopHintAttr::PipelineDisabled) ||
+               Option == LoopHintAttr::Perforate { //Parsing perforate
       assert(StateLoc && StateLoc->Ident && "Loop hint must have an argument");
       if (StateLoc->Ident->isStr("disable"))
         State = LoopHintAttr::Disable;
@@ -265,7 +265,7 @@ CheckForIncompatibleAttributes(Sema &S,
       Distribute,
       Pipeline,
       VectorizePredicate,
-      Perforate
+      Perforate //Adding perforate option
     } Category;
     switch (Option) {
     case LoopHintAttr::Vectorize:
@@ -295,7 +295,7 @@ CheckForIncompatibleAttributes(Sema &S,
     case LoopHintAttr::VectorizePredicate:
       Category = VectorizePredicate;
       break;
-    case LoopHintAttr::Perforate:
+    case LoopHintAttr::Perforate: //Handling perforate option
       Category = Perforate;
       break;
     };
