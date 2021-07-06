@@ -1143,6 +1143,7 @@ bool Parser::HandlePragmaLoopHint(LoopHint &Hint) {
                       .Case("vectorize", true)
                       .Case("interleave", true)
                       .Case("vectorize_predicate", true)
+                      .Case("perforate", true)
                       .Default(false) ||
                   OptionUnroll || OptionUnrollAndJam || OptionDistribute ||
                   OptionPipelineDisabled;
