@@ -99,22 +99,34 @@ public:
         continue;
 
       //Getting global variable's address for perforation factor
-      GlobalValue *b = L->getHeader()->getModule()->getNamedGlobal("CLANG_PERFORATION_RATE");
+      //GlobalValue *b = L->getHeader()->getModule()->getNamedGlobal("CLANG_PERFORATION_RATE");
+      Function *F = L->getHeader()->getModule()->getFunction("PERFORATION_FUNCTION");
 
-      LoadInst *loadInst;
-      if (b)
-        //We have to load global variable from attained address
-        loadInst = new LoadInst(b->getValueType(), b, "", L->getLoopPreheader()->getTerminator());
+      std::vector<Value *> Args;
+      for(Function::arg_iterator i =
+          F->arg_begin(), e = F->arg_end(); i != e; ++i)
+      {
+        Args.push_back(i);
+      }
+
+      //LoadInst *loadInst;
+      CallInst *NewCall;
+      if (F){//if (b) {
+        // We have to load global variable from attained address
+        //loadInst = new LoadInst(b->getValueType(), b, "",
+        //                        L->getLoopPreheader()->getTerminator());
+        NewCall = CallInst::Create(F, Args, "PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator());
+      }
       else
         return false; //Return false if global variable does not exist in the program
 
       //Possibly remove
-      PHINode::Create(L->getHeader()->getType(), 2, "", loadInst->getNextNode());
+      PHINode::Create(L->getHeader()->getType(), 2, "", NewCall->getNextNode());//loadInst->getNextNode());
 
       //Creating a multiplicaiton statement for global value of perforation rate
       //  and current increment
       auto *NewIncPerf = BinaryOperator::Create(Instruction::Mul, Op,
-                                                loadInst, "", Increment);
+                                                NewCall, "", Increment);
 
       //Possibly remove
       PHINode::Create(L->getHeader()->getType(), 2, "", NewIncPerf->getNextNode());
