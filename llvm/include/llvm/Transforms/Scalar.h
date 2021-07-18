@@ -343,7 +343,7 @@ FunctionPass *createMemCpyOptPass();
 Pass *createLoopPerforationLegacyPass();
 
 //Adding declaration for retrieving loop's metadata in LoopPerforation pass
-bool GetPerforationMetadata(MDNode *LoopID, StringRef Name);
+int GetPerforationMetadata(MDNode *LoopID, StringRef Name);
 
 Pass *createLoopDeletionPass();
 
