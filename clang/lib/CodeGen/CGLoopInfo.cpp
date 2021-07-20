@@ -20,6 +20,7 @@
 using namespace clang::CodeGen;
 using namespace llvm;
 
+//Creating static integer for perforable loop enumeration
 static int perfLoopCount = 1;
 
 MDNode *
@@ -438,6 +439,7 @@ MDNode *LoopInfo::createMetadata(
                         ConstantAsMetadata::get(ConstantInt::get(
                             llvm::Type::getInt32Ty(Ctx), perfLoopCount))};
 
+    //Increasing value for loop enumeration, so every loop has distinct value
     perfLoopCount++;
 
     Args.push_back(MDNode::get(Ctx, Vals));

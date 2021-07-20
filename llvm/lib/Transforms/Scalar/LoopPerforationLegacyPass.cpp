@@ -98,50 +98,42 @@ public:
       if (LatchCmpInst == nullptr)
         continue;
 
+      //Retrieving integer type dependent on context
       Type* int32Ty = Type::getInt32Ty(L->getHeader()->getContext());
 
-      Type*CreateArgs[] = {int32Ty};
+      //Creating array of argument types for the function
+      Type *CreateArgs[] = {int32Ty};
 
+      //Creating function type (type of return value and arguments) for the perforation function
       FunctionType* PerfFunCreateTy = FunctionType::get(int32Ty,
                                                         ArrayRef<Type*>(CreateArgs,1),
                                                         false);
 
-      //Getting global variable's address for perforation factor
-      //GlobalValue *b = L->getHeader()->getModule()->getNamedGlobal("CLANG_PERFORATION_RATE");
+      //Getting or inserting function which returns perforation factor
       FunctionCallee F = L->getHeader()->getModule()->getOrInsertFunction("CLANG_LOOP_PERFORATION_FUNCTION", PerfFunCreateTy);
 
       std::vector<Value *> CallArgs;
-/*      for(Function::arg_iterator i =
-          F->arg_begin(), e = F->arg_end(); i != e; ++i)
-      {
-        CallArgs.push_back(i);
-      }*/
 
+      //Creating constant integer value from loop's number retrieved from the metadata
+      //  Number was added during compilation from resolving #pragma instruction and
+      //  is unique for every loop.
       Constant *NewInc = ConstantInt::get(Type::getInt32Ty(L->getHeader()->getContext()), LoopPerfEnabled /*value*/, true /*issigned*/);
 
+      //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
 
-      //LoadInst *loadInst;
       CallInst *NewCall;
-      if (F){//if (b) {
-        // We have to load global variable from attained address
-        //loadInst = new LoadInst(b->getValueType(), b, "",
-        //                        L->getLoopPreheader()->getTerminator());
+      if (F){
+        //Inserting function call in the code
         NewCall = CallInst::Create(F, CallArgs, "CLANG_LOOP_PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator());
       }
       else
-        return false; //Return false if global variable does not exist in the program
+        return false;
 
-      //Possibly remove
-      PHINode::Create(L->getHeader()->getType(), 2, "", NewCall->getNextNode());//loadInst->getNextNode());
-
-      //Creating a multiplicaiton statement for global value of perforation rate
+      //Creating a multiplication statement for function's return value of perforation rate
       //  and current increment
       auto *NewIncPerf = BinaryOperator::Create(Instruction::Mul, Op,
                                                 NewCall, "", Increment);
-
-      //Possibly remove
-      PHINode::Create(L->getHeader()->getType(), 2, "", NewIncPerf->getNextNode());
 
       //Setting operand in increment statement from old to the multiplied one
       Increment->setOperand(i, NewIncPerf);
@@ -170,6 +162,8 @@ public:
     return false;
   };
 
+  //Declaring required passes (analyses) for execution of this pass.
+  //  We need data from these passes, so they have to be executed before this pass
   void getAnalysisUsage(AnalysisUsage &AU) const override {
 
     AU.addRequired<LoopInfoWrapperPass>();
@@ -179,6 +173,7 @@ public:
 
   }
 
+  //Retrieving compare instruction of the loop, so we can modify upper value
   ICmpInst *getLatchCmpInst(const Loop &L) const {
 
     if (BasicBlock *Latch = L.getLoopLatch())
@@ -202,6 +197,7 @@ Pass *llvm::createLoopPerforationLegacyPass() {
 char LoopPerforationLegacyPass::ID = 0;
 INITIALIZE_PASS_BEGIN(LoopPerforationLegacyPass, "loop-perforation",
                       "Perforate loops", false, false)
+  //Declaring required passes for execution of this pass (need to be executed before this pass).
   INITIALIZE_PASS_DEPENDENCY(LoopPass)
   INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
   INITIALIZE_PASS_DEPENDENCY(IVUsersWrapperPass)
@@ -211,7 +207,7 @@ INITIALIZE_PASS_END(LoopPerforationLegacyPass, "loop-perforation",
                     "Perforate loops", false, false)
 
 //Method for retrieving loop's metadata set with pragma instruction
-//   #pragma clang loop perforate
+//   #pragma clang loop perforate (enable)
 int llvm::GetPerforationMetadata(MDNode *LoopID, StringRef Name) {
   // First operand should refer to the loop id itself.
   assert(LoopID->getNumOperands() > 0 && "requires at least one operand");
@@ -227,6 +223,7 @@ int llvm::GetPerforationMetadata(MDNode *LoopID, StringRef Name) {
       continue;
 
     if (Name.equals(S->getString())) {
+      //Return the sequence number of the loop.
       return mdconst::extract<ConstantInt>(MD->getOperand(1))->getZExtValue();
     }
   }
