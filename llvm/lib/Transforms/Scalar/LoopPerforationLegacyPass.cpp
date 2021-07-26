@@ -96,28 +96,21 @@ public:
       ICmpInst *LatchCmpInst = getLatchCmpInst(*L);
 
       if (LatchCmpInst == nullptr)
-        continue;
+        return false;
 
       //Retrieving integer type dependent on context
       Type* int32Ty = Type::getInt32Ty(L->getHeader()->getContext());
 
-      //Creating array of argument types for the function
-      Type *CreateArgs[] = {int32Ty};
+      //Adding perforation function declaration to the LLVM IR
+      FunctionCallee F = L->getHeader()->getModule()->getOrInsertFunction("CLANG_LOOP_PERFORATION_FUNCTION", Op->getType(), int32Ty);
 
-      //Creating function type (type of return value and arguments) for the perforation function
-      FunctionType* PerfFunCreateTy = FunctionType::get(int32Ty,
-                                                        ArrayRef<Type*>(CreateArgs,1),
-                                                        false);
-
-      //Getting or inserting function which returns perforation factor
-      FunctionCallee F = L->getHeader()->getModule()->getOrInsertFunction("CLANG_LOOP_PERFORATION_FUNCTION", PerfFunCreateTy);
-
+      //Vector for function call arguments
       std::vector<Value *> CallArgs;
 
       //Creating constant integer value from loop's number retrieved from the metadata
       //  Number was added during compilation from resolving #pragma instruction and
       //  is unique for every loop.
-      Constant *NewInc = ConstantInt::get(Type::getInt32Ty(L->getHeader()->getContext()), LoopPerfEnabled /*value*/, true /*issigned*/);
+      Constant *NewInc = ConstantInt::get(int32Ty, LoopPerfEnabled /*value*/, true /*issigned*/);
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
@@ -125,10 +118,11 @@ public:
       CallInst *NewCall;
       if (F){
         //Inserting function call in the code
-        NewCall = CallInst::Create(F, CallArgs, "CLANG_LOOP_PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator());
+        NewCall = CallInst::Create(F, CallArgs, "CLANG_LOOP_PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator()  );
       }
       else
         return false;
+
 
       //Creating a multiplication statement for function's return value of perforation rate
       //  and current increment
@@ -136,23 +130,26 @@ public:
                                                 NewCall, "", Increment);
 
       //Setting operand in increment statement from old to the multiplied one
-      Increment->setOperand(i, NewIncPerf);
+      Increment->setOperand(i, NewIncPerf);   //Mogoce phi namesto newincperf
 
 
       //Retrieving instruction for termination of the loop
-      Instruction *InsertBefore = L->getLoopPreheader()->getTerminator();
+      //Instruction *InsertBefore = L->getLoopPreheader()->getTerminator();
 
       //Inserting remain instruction for new loops upper value
-      auto *Rem = BinaryOperator::Create(Instruction::SRem, &IVFinalVal,
-                                         Op, "", InsertBefore);
+      //auto *Rem = BinaryOperator::Create(Instruction::SRem, &IVFinalVal,
+      //             NewIncPerf, "", LatchCmpInst);  //Mogoce phi namesto newincperf
 
 
       //Subtracting remaining value from loop's upper value
-      auto *NewUpper = BinaryOperator::Create(Instruction::Sub, &IVFinalVal,
-                                              Rem, "", InsertBefore);
+      //auto *NewUpper = BinaryOperator::Create(Instruction::Sub, &IVFinalVal,
+      //                                      Rem, "", LatchCmpInst);
 
       //Setting loop's new upper value, which is multiple of current increment value
-      LatchCmpInst->setOperand(1, NewUpper);
+      //LatchCmpInst->setOperand(1, NewUpper);
+
+      //Changing loop compare instruction to less than (in simple loops its equals by default)
+      LatchCmpInst->setPredicate(ICmpInst::ICMP_SLT);
 
       //Returning true, because the LLVM IR has been changed
       return true;
