@@ -20,9 +20,6 @@
 using namespace clang::CodeGen;
 using namespace llvm;
 
-//Creating static integer for perforable loop enumeration
-static int perfLoopCount = 1;
-
 MDNode *
 LoopInfo::createLoopPropertiesMetadata(ArrayRef<Metadata *> LoopProperties) {
   LLVMContext &Ctx = Header->getContext();
@@ -435,12 +432,7 @@ MDNode *LoopInfo::createMetadata(
 
   if (Attrs.Perforate) {
     //Adding loop perforaion enabled to loop metadata
-    Metadata *Vals[] = {MDString::get(Ctx, "llvm.loop.perforate.enable"),
-                        ConstantAsMetadata::get(ConstantInt::get(
-                            llvm::Type::getInt32Ty(Ctx), perfLoopCount))};
-
-    //Increasing value for loop enumeration, so every loop has distinct value
-    perfLoopCount++;
+    Metadata *Vals[] = {MDString::get(Ctx, "llvm.loop.perforate.enable")};
 
     Args.push_back(MDNode::get(Ctx, Vals));
     return createFullUnrollMetadata(Attrs, Args, HasUserTransforms);

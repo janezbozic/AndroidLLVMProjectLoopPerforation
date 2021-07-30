@@ -2,7 +2,6 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/IR/Function.h"
-#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Transforms/Scalar.h"
@@ -13,7 +12,6 @@
 #include <llvm/Analysis/IVUsers.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/IR/IRBuilder.h>
-#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
 using namespace llvm;
@@ -59,14 +57,6 @@ public:
     // is also an incoming value to the phi
     Value *ValueToChange = nullptr;
 
-    ScalarEvolution *Se = &getAnalysis<ScalarEvolutionWrapperPass>().getSE();
-    // We get bounds of the loop's bounds
-    Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se);
-
-    //From bounds, we can get upper value of the loop, we have to change it, if the
-    //  loop's current bound is not multiple of new perforated increment value
-    Value &IVFinalVal = Bounds->getFinalIVValue();
-
     //In simple loops we get increment by matcing same node in users and
     //  incoming values of induction variable.
     for (auto User : PHI->users()) {
@@ -107,10 +97,12 @@ public:
       //Vector for function call arguments
       std::vector<Value *> CallArgs;
 
-      //Creating constant integer value from loop's number retrieved from the metadata
-      //  Number was added during compilation from resolving #pragma instruction and
-      //  is unique for every loop.
-      Constant *NewInc = ConstantInt::get(int32Ty, LoopPerfEnabled /*value*/, true /*issigned*/);
+      //Creating constant integer value from loop's address of LoopID
+      //  and hashing it, so it will be used as unique loop id for passing
+      //  perforation factor
+      std::hash<int> hasher;
+      int hashed = hasher((intptr_t)&(L->getLoopID()->getOperand(0)));
+      Constant *NewInc = ConstantInt::get(int32Ty, hashed /*value*/, true /*issigned*/);
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
@@ -133,21 +125,6 @@ public:
       Increment->setOperand(i, NewIncPerf);   //Mogoce phi namesto newincperf
 
 
-      //Retrieving instruction for termination of the loop
-      //Instruction *InsertBefore = L->getLoopPreheader()->getTerminator();
-
-      //Inserting remain instruction for new loops upper value
-      //auto *Rem = BinaryOperator::Create(Instruction::SRem, &IVFinalVal,
-      //             NewIncPerf, "", LatchCmpInst);  //Mogoce phi namesto newincperf
-
-
-      //Subtracting remaining value from loop's upper value
-      //auto *NewUpper = BinaryOperator::Create(Instruction::Sub, &IVFinalVal,
-      //                                      Rem, "", LatchCmpInst);
-
-      //Setting loop's new upper value, which is multiple of current increment value
-      //LatchCmpInst->setOperand(1, NewUpper);
-
       //Changing loop compare instruction to less than (in simple loops its equals by default)
       LatchCmpInst->setPredicate(ICmpInst::ICMP_SLT);
 
@@ -165,7 +142,6 @@ public:
 
     AU.addRequired<LoopInfoWrapperPass>();
     AU.addRequired<IVUsersWrapperPass>();
-    AU.addRequired<ScalarEvolutionWrapperPass>();
     AU.addRequiredID(LoopSimplifyID);
 
   }
@@ -198,14 +174,13 @@ INITIALIZE_PASS_BEGIN(LoopPerforationLegacyPass, "loop-perforation",
   INITIALIZE_PASS_DEPENDENCY(LoopPass)
   INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
   INITIALIZE_PASS_DEPENDENCY(IVUsersWrapperPass)
-  INITIALIZE_PASS_DEPENDENCY(ScalarEvolutionWrapperPass)
   INITIALIZE_PASS_DEPENDENCY(LoopSimplify)
 INITIALIZE_PASS_END(LoopPerforationLegacyPass, "loop-perforation",
                     "Perforate loops", false, false)
 
 //Method for retrieving loop's metadata set with pragma instruction
 //   #pragma clang loop perforate (enable)
-int llvm::GetPerforationMetadata(MDNode *LoopID, StringRef Name) {
+bool llvm::GetPerforationMetadata(MDNode *LoopID, StringRef Name) {
   // First operand should refer to the loop id itself.
   assert(LoopID->getNumOperands() > 0 && "requires at least one operand");
   assert(LoopID->getOperand(0) == LoopID && "invalid loop id");
@@ -220,9 +195,9 @@ int llvm::GetPerforationMetadata(MDNode *LoopID, StringRef Name) {
       continue;
 
     if (Name.equals(S->getString())) {
-      //Return the sequence number of the loop.
-      return mdconst::extract<ConstantInt>(MD->getOperand(1))->getZExtValue();
+      //Return true for perforation of the loop.
+      return true;
     }
   }
-  return 0;
+  return false;
 }

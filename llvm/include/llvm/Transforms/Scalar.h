@@ -16,6 +16,7 @@
 
 #include "llvm/Transforms/Utils/SimplifyCFGOptions.h"
 #include <functional>
+#include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/Metadata.h>
 
 namespace llvm {
@@ -343,7 +344,7 @@ FunctionPass *createMemCpyOptPass();
 Pass *createLoopPerforationLegacyPass();
 
 //Adding declaration for retrieving loop's metadata in LoopPerforation pass
-int GetPerforationMetadata(MDNode *LoopID, StringRef Name);
+bool GetPerforationMetadata(MDNode *LoopID, StringRef Name);
 
 Pass *createLoopDeletionPass();
 
