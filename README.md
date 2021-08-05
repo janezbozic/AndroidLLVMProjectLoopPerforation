@@ -21,8 +21,8 @@ From [Here](https://android.googlesource.com/platform/ndk/+/ndk-r15-release/READ
 3. repo init -u https://android.googlesource.com/platform/manifest \
     -b master-ndk
 4. copy clang-dev from llvm-toolchain/out/install/<your_platform> to ndk/prebuilts/host/<your_platform>
-5. from ndk folder: cd ndk --> so your path is ndk_source/ndk
-6. edit CLANG_VERSION = 'clang-dev' in ndk_source/ndk/ndk/toolchains.py
+5. edit CLANG_VERSION = 'clang-dev' in ndk_source/ndk/ndk/toolchains.py
+6. from ndk folder: cd ndk --> so your path is ndk_source/ndk
 7. ./checkbuild.py --system <linux/darwin/win32>
-8. Add ndkPath parameter to build.gradle file of your android project, pointing at ndk/out/<host>/<ndk_version>
+8. Add ndkPath parameter to build.gradle file of your android project, pointing at ndk_source/out/<host>/<ndk_version>
     
