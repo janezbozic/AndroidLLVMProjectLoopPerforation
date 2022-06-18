@@ -25,4 +25,3 @@ From [Here](https://android.googlesource.com/platform/ndk/+/ndk-r15-release/READ
 6. from ndk folder: cd ndk --> so your path is ndk_source/ndk
 7. ./checkbuild.py --system <linux/darwin/win32>
 8. Add ndkPath parameter to build.gradle file of your android project, pointing at ndk_source/out/<host>/<ndk_version>
-    
