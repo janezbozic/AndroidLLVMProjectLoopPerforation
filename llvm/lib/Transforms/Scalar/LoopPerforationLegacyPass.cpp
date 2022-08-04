@@ -57,6 +57,14 @@ public:
     // is also an incoming value to the phi
     Value *ValueToChange = nullptr;
 
+    ScalarEvolution *Se = &getAnalysis<ScalarEvolutionWrapperPass>().getSE();
+    // We get bounds of the loop's bounds
+    Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se);
+
+    //From bounds, we can get upper value of the loop, we have to change it, if the
+    //  loop's current bound is not multiple of new perforated increment value
+    Value &IVFinalVal = Bounds->getFinalIVValue();
+
     //In simple loops we get increment by matcing same node in users and
     //  incoming values of induction variable.
     for (auto User : PHI->users()) {
@@ -106,6 +114,10 @@ public:
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
+      CallArgs.push_back(NewInc, IVFinalVal);
+      if (Constant* CI = dyn_cast<ConstantInt>(&IVFinalVal)) {
+        CallArgs.push_back(CI);
+      }
 
       CallInst *NewCall;
       if (F){
