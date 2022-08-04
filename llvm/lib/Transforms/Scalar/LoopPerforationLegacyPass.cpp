@@ -114,7 +114,6 @@ public:
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
-      CallArgs.push_back(NewInc, IVFinalVal);
       if (Constant* CI = dyn_cast<ConstantInt>(&IVFinalVal)) {
         CallArgs.push_back(CI);
       }
