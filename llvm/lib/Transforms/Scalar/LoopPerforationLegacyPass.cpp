@@ -58,12 +58,6 @@ public:
     Value *ValueToChange = nullptr;
 
     ScalarEvolution *Se = &getAnalysis<ScalarEvolutionWrapperPass>().getSE();
-    // We get bounds of the loop's bounds
-    Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se);
-
-    //From bounds, we can get upper value of the loop, we have to change it, if the
-    //  loop's current bound is not multiple of new perforated increment value
-    Value &IVFinalVal = Bounds->getFinalIVValue();
 
     //In simple loops we get increment by matcing same node in users and
     //  incoming values of induction variable.
@@ -100,7 +94,7 @@ public:
       Type* int32Ty = Type::getInt32Ty(L->getHeader()->getContext());
 
       //Adding perforation function declaration to the LLVM IR
-      FunctionCallee F = L->getHeader()->getModule()->getOrInsertFunction("CLANG_LOOP_PERFORATION_FUNCTION", Op->getType(), int32Ty);
+      FunctionCallee F = L->getHeader()->getModule()->getOrInsertFunction("CLANG_LOOP_PERFORATION_FUNCTION", Op->getType(), int32Ty, int32Ty);
 
       //Vector for function call arguments
       std::vector<Value *> CallArgs;
@@ -114,8 +108,28 @@ public:
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
-      if (Constant* CI = dyn_cast<ConstantInt>(&IVFinalVal)) {
-        CallArgs.push_back(CI);
+
+      // From bounds, we can get upper value of the loop, we have to change it, if the
+      //   loop's current bound is not multiple of new perforated increment value
+      if (Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se)) {
+        Value &IVFinalVal = Bounds->getFinalIVValue();
+        if (isa<Constant>(&IVFinalVal)) {
+          Constant *CI = dyn_cast<ConstantInt>(&IVFinalVal);
+          CallArgs.push_back(CI);
+        }
+        else if (isa<LoadInst>(&IVFinalVal)) {
+          LoadInst *loadedGV = new LoadInst(int32Ty, getLoadStorePointerOperand(&IVFinalVal), "LoadUpperBoundFromGV",
+                                            L->getLoopPreheader()->getTerminator());
+          CallArgs.push_back(loadedGV);
+        }
+        else{
+          Constant *upperValue = ConstantInt::get(int32Ty, 2147483647  /*value*/, true /*issigned*/);
+          CallArgs.push_back(upperValue);
+        }
+      }
+      else{
+        Constant *upperValue = ConstantInt::get(int32Ty, 2147483647  /*value*/, true /*issigned*/);
+        CallArgs.push_back(upperValue);
       }
 
       CallInst *NewCall;
@@ -151,6 +165,7 @@ public:
   //  We need data from these passes, so they have to be executed before this pass
   void getAnalysisUsage(AnalysisUsage &AU) const override {
 
+    AU.addRequired<ScalarEvolutionWrapperPass>();
     AU.addRequired<LoopInfoWrapperPass>();
     AU.addRequired<IVUsersWrapperPass>();
     AU.addRequiredID(LoopSimplifyID);
@@ -181,11 +196,11 @@ Pass *llvm::createLoopPerforationLegacyPass() {
 char LoopPerforationLegacyPass::ID = 0;
 INITIALIZE_PASS_BEGIN(LoopPerforationLegacyPass, "loop-perforation",
                       "Perforate loops", false, false)
-  //Declaring required passes for execution of this pass (need to be executed before this pass).
-  INITIALIZE_PASS_DEPENDENCY(LoopPass)
-  INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
-  INITIALIZE_PASS_DEPENDENCY(IVUsersWrapperPass)
-  INITIALIZE_PASS_DEPENDENCY(LoopSimplify)
+//Declaring required passes for execution of this pass (need to be executed before this pass).
+INITIALIZE_PASS_DEPENDENCY(LoopPass)
+INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(IVUsersWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(LoopSimplify)
 INITIALIZE_PASS_END(LoopPerforationLegacyPass, "loop-perforation",
                     "Perforate loops", false, false)
 
