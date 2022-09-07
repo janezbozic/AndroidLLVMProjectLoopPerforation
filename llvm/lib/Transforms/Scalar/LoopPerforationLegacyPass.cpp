@@ -58,6 +58,12 @@ public:
     Value *ValueToChange = nullptr;
 
     ScalarEvolution *Se = &getAnalysis<ScalarEvolutionWrapperPass>().getSE();
+    // We get bounds of the loop's bounds
+    Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se);
+
+    //From bounds, we can get upper value of the loop, we have to change it, if the
+    //  loop's current bound is not multiple of new perforated increment value
+    Value &IVFinalVal = Bounds->getFinalIVValue();
 
     //In simple loops we get increment by matcing same node in users and
     //  incoming values of induction variable.
@@ -108,34 +114,34 @@ public:
 
       //Adding Integer value to arguments vector for the function call
       CallArgs.push_back(NewInc);
+      if (isa<LoadInst>(&IVFinalVal)) {
+        LoadInst *loadedGV = new LoadInst(int32Ty, getLoadStorePointerOperand(&IVFinalVal), "LoadUpperBoundFromGV",
+                                          L->getLoopPreheader()->getTerminator());
+        CallArgs.push_back(loadedGV);
+      }
+      else {
+        if (isa<BinaryOperator>(&IVFinalVal)){
+          BinaryOperator *CI = dyn_cast<BinaryOperator>(&IVFinalVal);
+          CallArgs.push_back(CI);
 
-      // From bounds, we can get upper value of the loop, we have to change it, if the
-      //   loop's current bound is not multiple of new perforated increment value
-      if (Optional< Loop::LoopBounds > Bounds = L->getBounds(*Se)) {
-        Value &IVFinalVal = Bounds->getFinalIVValue();
-        if (isa<Constant>(&IVFinalVal)) {
-          Constant *CI = dyn_cast<ConstantInt>(&IVFinalVal);
+        }
+        else if (isa<CallInst>(&IVFinalVal)){
+          CallInst *CI = dyn_cast<CallInst>(&IVFinalVal);
           CallArgs.push_back(CI);
         }
-        else if (isa<LoadInst>(&IVFinalVal)) {
-          LoadInst *loadedGV = new LoadInst(int32Ty, getLoadStorePointerOperand(&IVFinalVal), "LoadUpperBoundFromGV",
-                                            L->getLoopPreheader()->getTerminator());
-          CallArgs.push_back(loadedGV);
+        else if (Constant *CI = dyn_cast<Constant>(&IVFinalVal)) {
+          CallArgs.push_back(CI);
         }
         else{
           Constant *upperValue = ConstantInt::get(int32Ty, 2147483647  /*value*/, true /*issigned*/);
           CallArgs.push_back(upperValue);
         }
       }
-      else{
-        Constant *upperValue = ConstantInt::get(int32Ty, 2147483647  /*value*/, true /*issigned*/);
-        CallArgs.push_back(upperValue);
-      }
 
       CallInst *NewCall;
       if (F){
         //Inserting function call in the code
-        NewCall = CallInst::Create(F, CallArgs, "CLANG_LOOP_PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator()  );
+        NewCall = CallInst::Create(F, CallArgs, "CLANG_LOOP_PERFORATION_FUNCTION_CALL", L->getLoopPreheader()->getTerminator());
       }
       else
         return false;
